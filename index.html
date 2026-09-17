@@ -70,16 +70,18 @@
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;overscroll-behavior:none;}
+html,body{margin:0;padding:0;overscroll-behavior:none;height:100%;}
+html{position:fixed;inset:0;width:100%;overflow:hidden;}
 body{
+  position:fixed;inset:0;width:100%;
   background:
     radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.03), transparent 60%),
     repeating-linear-gradient(135deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 2px, transparent 2px, transparent 5px),
     linear-gradient(180deg, var(--leather-1), var(--leather-2) 60%, var(--leather-edge));
   color:var(--ink);
   font-family:var(--font-body);
-  min-height:100vh;
-  min-height:100dvh;
+  height:100dvh;
+  height:calc(var(--app-height, 100dvh));
   -webkit-font-smoothing:antialiased;
   overflow:hidden;
 }
@@ -87,8 +89,7 @@ body{
 .app-shell{
   max-width:640px;
   margin:0 auto;
-  height:100vh;
-  height:100dvh;
+  height:100%;
   display:flex;
   flex-direction:column;
   position:relative;
@@ -186,22 +187,34 @@ body{
   position:relative;
   perspective:1800px;
 }
-.nav-arrow{
-  position:absolute;top:50%;transform:translateY(-50%);
-  width:38px;height:64px;
-  background:linear-gradient(180deg,#3a2c1c,#241a10);
-  border:1px solid var(--gold);
-  color:var(--gold-bright);
-  font-size:18px;
+.page-turn{
+  position:absolute;bottom:1px;
+  width:32px;height:30px;
+  background:none;border:none;padding:0;margin:0;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;
-  z-index:15;
-  opacity:.85;
+  z-index:7;
+  opacity:.9;
 }
-.nav-arrow:active{opacity:1;transform:translateY(-50%) scale(.94);}
-.nav-arrow.left{left:2px;border-radius:0 var(--radius-m) var(--radius-m) 0;}
-.nav-arrow.right{right:2px;border-radius:var(--radius-m) 0 0 var(--radius-m);}
-.nav-arrow[disabled]{opacity:.25;pointer-events:none;}
+.page-turn:active .tri{transform:scale(.78);}
+.page-turn[disabled]{opacity:.2;pointer-events:none;}
+.page-turn.page-turn-prev{left:1px;}
+.page-turn.page-turn-next{right:1px;}
+.tri{
+  width:0;height:0;
+  transition:transform .12s ease;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.18));
+}
+.tri-left{
+  border-top:8px solid transparent;
+  border-bottom:8px solid transparent;
+  border-right:11px solid #6b4a2a;
+}
+.tri-right{
+  border-top:8px solid transparent;
+  border-bottom:8px solid transparent;
+  border-left:11px solid #6b4a2a;
+}
 
 .page-stage{
   position:relative;
@@ -278,7 +291,7 @@ body{
 .page-head .p-date:focus{border-bottom:1px dashed var(--ink-soft);}
 .page-head .p-date::placeholder{color:var(--ink-soft);opacity:.55;}
 .page-num{
-  position:absolute;bottom:6px;right:12px;
+  position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
   font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);
   z-index:6;
 }
@@ -301,21 +314,66 @@ body{
 .canvas-wrap{position:absolute;inset:0;top:44px;z-index:3;pointer-events:none;}
 .mode-draw .canvas-wrap{pointer-events:auto;}
 canvas.draw-layer{width:100%;height:100%;display:block;touch-action:none;}
-.text-layer{
+.textbox-layer{
   position:absolute;inset:0;top:44px;z-index:2;
-  padding:10px 14px 30px;
-  overflow-y:auto;
-  outline:none;
-  line-height:1.55;
-  color:var(--ink);
-  -webkit-user-select:text;
+  overflow-y:auto;overflow-x:hidden;
   pointer-events:none;
 }
-.mode-text .text-layer{pointer-events:auto;}
-.text-layer[contenteditable="false"]{cursor:default;}
-.text-layer:empty:before{
+.mode-text .textbox-layer{pointer-events:auto;}
+.text-box{
+  position:absolute;
+  box-sizing:border-box;
+  max-width:calc(100% - 4px);
+  border:1.5px dashed transparent;
+  border-radius:3px;
+  touch-action:none;
+}
+.mode-text .text-box{cursor:grab;}
+.text-box.editing{cursor:text;touch-action:auto;}
+.text-box-inner{
+  outline:none;
+  padding:4px 7px;
+  line-height:1.5;
+  min-height:1.5em;
+  color:var(--ink);
+  cursor:default;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.text-box-inner[contenteditable="true"]{
+  cursor:text;
+  -webkit-user-select:text;
+  user-select:text;
+}
+.text-box-inner:empty:before{
   content:attr(data-placeholder);
   color:var(--ink-soft);opacity:.5;font-style:italic;
+}
+.text-box.selected{border-color:var(--gold-bright);}
+.text-box.selected .text-box-inner{background:rgba(185,144,63,.07);}
+.text-box.editing{border-color:var(--emerald-bright);}
+.text-box.editing .text-box-inner{background:rgba(60,90,69,.08);}
+.text-box .tb-del, .text-box .tb-edit, .text-box .tb-done{
+  position:absolute;top:-11px;width:24px;height:24px;border-radius:50%;
+  border:1.5px solid var(--parchment);color:var(--parchment);font-size:12px;line-height:1;
+  display:none;align-items:center;justify-content:center;cursor:pointer;
+}
+.text-box .tb-del{right:-11px;background:var(--wax);}
+.text-box .tb-edit{left:-11px;background:var(--emerald);}
+.text-box .tb-done{right:-11px;background:var(--ok);font-size:13px;}
+.text-box .tb-resize{
+  position:absolute;top:50%;right:-9px;transform:translateY(-50%);
+  width:18px;height:18px;border-radius:50%;
+  background:var(--gold);border:1.5px solid var(--leather-1);
+  display:none;cursor:ew-resize;
+}
+.text-box.selected:not(.editing) .tb-del,
+.text-box.selected:not(.editing) .tb-edit,
+.text-box.selected:not(.editing) .tb-resize{display:flex;}
+.text-box.editing .tb-done{display:flex;}
+.textbox-empty-hint{
+  padding:20px;text-align:center;color:var(--ink-soft);opacity:.5;
+  font-style:italic;font-size:13px;pointer-events:none;
 }
 
 .image-layer{
@@ -358,62 +416,101 @@ canvas.draw-layer{width:100%;height:100%;display:block;touch-action:none;}
   font-style:italic;font-size:13px;pointer-events:none;
 }
 
-.mode-view .text-layer, .mode-view .canvas-wrap, .mode-view .image-layer{pointer-events:none;}
+.mode-view .textbox-layer, .mode-view .canvas-wrap, .mode-view .image-layer{pointer-events:none;}
 
 .shape-preview{position:absolute;inset:0;top:44px;z-index:4;pointer-events:none;}
 
-/* ---------- BOTTOM CONTROLS ---------- */
-.controls{
-  flex-shrink:0;
-  background:linear-gradient(180deg,#241a14,#180f0a);
-  border-top:3px solid var(--gold);
-  box-shadow:0 -2px 10px rgba(0,0,0,.5);
-  z-index:20;
-  padding-bottom:env(safe-area-inset-bottom);
+/* ---------- SIDE DOCK ---------- */
+.side-dock{
+  position:absolute;
+  right:8px;
+  bottom:90px;
+  z-index:28;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:linear-gradient(180deg,rgba(44,33,20,.95),rgba(28,20,12,.95));
+  border:1px solid var(--gold);
+  border-radius:22px;
+  padding:7px 5px;
+  box-shadow:0 6px 20px rgba(0,0,0,.5);
+  max-height:calc(var(--app-height, 100dvh) - 130px);
+  overflow-y:auto;
+  scrollbar-width:none;
 }
-.mode-switch{
-  display:flex;gap:6px;padding:8px 10px 4px;
-  align-items:stretch;
+.side-dock::-webkit-scrollbar{display:none;}
+.side-dock.side-left{right:auto;left:8px;}
+.dock-grip{
+  width:32px;height:16px;display:flex;align-items:center;justify-content:center;
+  color:var(--parchment-shadow);font-size:11px;letter-spacing:1px;
+  cursor:grab;touch-action:none;flex-shrink:0;
 }
-.panel-toggle{
-  flex:0 0 34px;
-  background:linear-gradient(180deg,#2c2114,#1c140c);
-  border:1px solid #4a3826;color:var(--gold-bright);
-  border-radius:var(--radius-s);font-size:13px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
+.dock-flip{
+  width:32px;height:22px;flex-shrink:0;border-radius:8px;border:1px solid #4a3826;
+  background:transparent;color:var(--gold-bright);font-size:12px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
 }
-.panel-toggle:active{transform:scale(.92);}
-#toolPanelWrap{
-  display:grid;grid-template-rows:1fr;
-  transition:grid-template-rows .22s ease;
+.dock-hide{
+  width:32px;height:22px;flex-shrink:0;border-radius:8px;border:1px solid #4a3826;
+  background:transparent;color:var(--parchment-shadow);font-size:11px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
 }
-#toolPanelWrap.collapsed{grid-template-rows:0fr;}
-#toolPanelWrap > .panel-inner{overflow:hidden;min-height:0;}
-.mode-switch button{
-  flex:1;
-  background:linear-gradient(180deg,#2c2114,#1c140c);
-  border:1px solid #4a3826;
-  color:var(--parchment-shadow);
-  font-family:var(--font-display);
-  font-size:11.5px;letter-spacing:.4px;
-  padding:8px 4px;border-radius:var(--radius-s);
-  display:flex;flex-direction:column;align-items:center;gap:2px;
+.dock-peek{
+  position:absolute;
+  right:0;z-index:27;
+  width:24px;height:46px;
+  background:linear-gradient(180deg,rgba(44,33,20,.95),rgba(28,20,12,.95));
+  border:1px solid var(--gold);border-right:none;
+  border-radius:14px 0 0 14px;
+  color:var(--gold-bright);font-size:13px;
+  display:none;align-items:center;justify-content:center;
   cursor:pointer;
+  box-shadow:-3px 0 10px rgba(0,0,0,.4);
 }
-.mode-switch button .ico{font-size:15px;}
-.mode-switch button.active{
-  background:linear-gradient(180deg,#3d2e18,#2a1e10);
-  border-color:var(--gold);color:var(--gold-bright);
-  box-shadow:0 0 0 1px rgba(185,144,63,.35) inset;
+.dock-peek.side-left{
+  right:auto;left:0;
+  border-right:1px solid var(--gold);border-left:none;
+  border-radius:0 14px 14px 0;
+  box-shadow:3px 0 10px rgba(0,0,0,.4);
 }
+.dock-group{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.dock-divider{width:24px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6;margin:1px 0;flex-shrink:0;}
+.dock-btn{
+  flex-shrink:0;
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(180deg,#2c2114,#1c140c);
+  border:1px solid #4a3826;color:var(--parchment);
+  font-size:16px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;padding:0;
+}
+.dock-btn:active{transform:scale(.9);}
+.dock-btn.active{
+  border-color:var(--gold);background:linear-gradient(180deg,#3d2e18,#2a1e10);
+  color:var(--gold-bright);box-shadow:0 0 0 1px rgba(185,144,63,.4) inset;
+}
+.dock-btn.small-label{font-size:14px;font-family:var(--font-display);font-weight:700;}
+.dock-color-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--parchment);display:block;}
 
-.tool-panel{
-  padding:6px 10px 10px;
-  display:flex;flex-direction:column;gap:8px;
-  max-height:38vh;overflow-y:auto;
+.dock-popover-backdrop{
+  position:fixed;inset:0;z-index:26;background:transparent;display:none;
 }
+.dock-popover-backdrop.open{display:block;}
+.dock-popover{
+  position:absolute;
+  z-index:30;
+  width:228px;
+  max-width:calc(100% - 90px);
+  background:linear-gradient(180deg,#241a14,#1b1410);
+  border:1px solid var(--gold);
+  border-radius:var(--radius-m);
+  box-shadow:0 10px 30px rgba(0,0,0,.55);
+  padding:10px 10px 12px;
+  display:none;
+  max-height:min(420px, calc(var(--app-height, 100dvh) - 110px));
+  overflow-y:auto;
+}
+.dock-popover.open{display:block;}
+.popover-body{display:flex;flex-direction:column;gap:8px;}
+
 .tool-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.tool-row.scroll{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;}
 .tool-label{
   font-family:var(--font-mono);font-size:9.5px;color:var(--parchment-shadow);
   text-transform:uppercase;letter-spacing:.6px;width:100%;margin-top:2px;
@@ -480,7 +577,6 @@ input[type=color]{
   </div>
 
   <div class="book-viewport">
-    <button class="nav-arrow left" id="prevBtn">‹</button>
     <div class="page-stage">
       <div class="zoom-wrap" id="zoomWrap">
       <div class="leaf flip-cover" id="leaf">
@@ -496,10 +592,12 @@ input[type=color]{
             <input class="p-date" id="pageDate" placeholder="Дата (например, 15 Хаммера, 1492 ЛД)" maxlength="60">
           </div>
         </div>
-        <div class="text-layer" id="textLayer" contenteditable="false" data-placeholder="Пишите здесь…"></div>
+        <div class="textbox-layer" id="textboxLayer"></div>
         <div class="image-layer" id="imageLayer"></div>
         <div class="canvas-wrap"><canvas class="draw-layer" id="drawCanvas"></canvas></div>
         <svg class="shape-preview" id="shapePreview"></svg>
+        <button class="page-turn page-turn-prev" id="prevBtn" aria-label="Предыдущая страница"><span class="tri tri-left"></span></button>
+        <button class="page-turn page-turn-next" id="nextBtn" aria-label="Следующая страница"><span class="tri tri-right"></span></button>
         <div class="page-num" id="pageNum">1</div>
       </div>
       </div>
@@ -510,30 +608,61 @@ input[type=color]{
         <button id="zoomResetBtn" title="Сбросить масштаб">⤾</button>
       </div>
     </div>
-    <button class="nav-arrow right" id="nextBtn">›</button>
   </div>
 
-  <div class="controls mode-draw" id="controls">
-    <div class="mode-switch">
-      <button data-mode="draw" class="active"><span class="ico">✏️</span>Рисовать</button>
-      <button data-mode="text"><span class="ico">🖋️</span>Текст</button>
-      <button data-mode="images"><span class="ico">🖼️</span>Картинки</button>
-      <button data-mode="view"><span class="ico">👁</span>Читать</button>
-      <button class="panel-toggle" id="panelToggle" title="Скрыть/показать панель">▾</button>
+  <div class="side-dock" id="sideDock">
+    <div class="dock-grip" id="dockGrip">⋮⋮</div>
+    <button class="dock-flip" id="dockFlipBtn" title="Переместить на другую сторону">⇄</button>
+    <button class="dock-hide" id="dockHideBtn" title="Скрыть панель">✕</button>
+
+    <div class="dock-group" id="dockModes">
+      <button class="dock-btn active" data-mode="draw" title="Рисовать">✏️</button>
+      <button class="dock-btn" data-mode="text" title="Текст">🖋️</button>
+      <button class="dock-btn" data-mode="images" title="Картинки">🖼️</button>
+      <button class="dock-btn" data-mode="view" title="Читать">👁</button>
+    </div>
+    <div class="dock-divider"></div>
+
+    <div class="dock-group" id="dockToolsDraw">
+      <button class="dock-btn active" data-tool="pen" title="Перо">✒️</button>
+      <button class="dock-btn" data-tool="marker" title="Маркер">🖊️</button>
+      <button class="dock-btn" data-tool="highlighter" title="Текстовыделитель">🖍️</button>
+      <button class="dock-btn" data-tool="eraser" title="Ластик">🧹</button>
+      <button class="dock-btn" data-tool="line" title="Линия">／</button>
+      <button class="dock-btn" data-tool="rect" title="Прямоугольник">▭</button>
+      <button class="dock-btn" data-tool="circle" title="Круг">◯</button>
+      <button class="dock-btn" data-tool="arrow" title="Стрелка">↗</button>
+      <button class="dock-btn" data-tool="select" title="Выделение">🔲</button>
+      <div class="dock-divider"></div>
+      <button class="dock-btn" id="undoBtn" title="Отменить">↩️</button>
+      <button class="dock-btn" id="redoBtn" title="Повторить">↪️</button>
+      <button class="dock-btn" id="dockDrawSettingsBtn" title="Настройки кисти">
+        <span class="dock-color-dot" id="dockColorDot" style="background:#2c2011"></span>
+      </button>
     </div>
 
-    <div id="toolPanelWrap"><div class="panel-inner">
-    <div class="tool-panel" id="drawPanel">
-      <div class="tool-row scroll" id="brushRow">
-        <button class="chip active" data-tool="pen">✒️ Перо</button>
-        <button class="chip" data-tool="marker">🖊️ Маркер</button>
-        <button class="chip" data-tool="highlighter">🖍️ Текстовыделитель</button>
-        <button class="chip" data-tool="eraser">🧹 Ластик</button>
-        <button class="chip" data-tool="line">／ Линия</button>
-        <button class="chip" data-tool="rect">▭ Прямоугольник</button>
-        <button class="chip" data-tool="circle">◯ Круг</button>
-        <button class="chip" data-tool="arrow">↗ Стрелка</button>
-      </div>
+    <div class="dock-group" id="dockToolsText" style="display:none;">
+      <button class="dock-btn" id="dockAddTextBtn" title="Добавить блок текста">➕</button>
+      <button class="dock-btn" id="editTextBoxBtn" title="Редактировать" style="display:none;">✎</button>
+      <button class="dock-btn" id="deleteTextBoxBtn" title="Удалить блок" style="display:none;">🗑️</button>
+      <button class="dock-btn small-label" id="dockTextSettingsBtn" title="Шрифт и стиль">Aa</button>
+    </div>
+
+    <div class="dock-group" id="dockToolsImages" style="display:none;">
+      <button class="dock-btn" id="dockPasteImgBtn" title="Вставить из буфера">📋</button>
+      <button class="dock-btn" id="dockChooseImgBtn" title="Выбрать файл">🗂️</button>
+      <button class="dock-btn" id="imgFrontBtn" title="На передний план" style="display:none;">⬆️</button>
+      <button class="dock-btn" id="imgBackBtn" title="На задний план" style="display:none;">⬇️</button>
+      <button class="dock-btn" id="imgDeleteBtn" title="Удалить картинку" style="display:none;">🗑️</button>
+      <input type="file" id="imageFileInput" accept="image/*" style="display:none;">
+    </div>
+  </div>
+
+  <button class="dock-peek" id="dockPeekBtn" title="Показать панель инструментов">🛠️</button>
+
+  <div class="dock-popover-backdrop" id="dockPopoverBackdrop"></div>
+  <div class="dock-popover" id="dockPopover">
+    <div class="popover-body" id="drawSettingsPopover">
       <div class="tool-row">
         <span class="tool-label">Цвет</span>
         <div class="swatch active" style="background:#2c2011" data-color="#2c2011"></div>
@@ -550,13 +679,22 @@ input[type=color]{
         <span class="size-tag" id="brushSizeTag">3</span>
       </div>
       <div class="tool-row">
-        <button class="chip icon-only" id="undoBtn" title="Отменить">↩️</button>
-        <button class="chip icon-only" id="redoBtn" title="Повторить">↪️</button>
         <button class="chip" id="clearDrawBtn">🗑️ Очистить рисунок</button>
+      </div>
+      <div class="tool-row" id="selActionsRow" style="display:none;">
+        <span class="tool-label" id="selCountLabel">Выделено: 0</span>
+        <button class="chip" id="selDeleteBtn">🗑️ Удалить выделенное</button>
+        <button class="chip" id="selClearBtn">✕ Снять выделение</button>
+      </div>
+      <div class="tool-row" id="selHintRow" style="display:none;">
+        <span class="tool-label" style="opacity:.7">Обведите рисунок рамкой, чтобы выделить, затем перетащите его пальцем.</span>
       </div>
     </div>
 
-    <div class="tool-panel" id="textPanel" style="display:none;">
+    <div class="popover-body" id="textSettingsPopover" style="display:none;">
+      <div class="tool-row" id="textEmptyRow" style="display:flex;">
+        <span class="tool-label" style="opacity:.7">Нажмите ➕, чтобы добавить блок. Тап по блоку — выбрать, ✎ — писать, перетаскивайте пальцем, чтобы переместить.</span>
+      </div>
       <div class="tool-row">
         <span class="tool-label">Шрифт</span>
         <select class="themed" id="fontSelect">
@@ -599,32 +737,12 @@ input[type=color]{
         <input type="color" id="textColorCustom" value="#2c2011">
       </div>
       <div class="tool-row">
-        <span class="tool-label">Выравнивание</span>
+        <span class="tool-label">Выравнивание блока</span>
         <button class="chip icon-only" data-align="left">⟸</button>
         <button class="chip icon-only" data-align="center">⇔</button>
         <button class="chip icon-only" data-align="right">⟹</button>
-        <button class="chip" id="clearTextBtn">🗑️ Очистить текст</button>
-      </div>
-      <div class="tool-row"><span class="tool-label" style="opacity:.7">Совет: выделите текст пальцем, затем выберите стиль. Без выделения стиль станет базовым для страницы.</span></div>
-    </div>
-
-    <div class="tool-panel" id="imagesPanel" style="display:none;">
-      <div class="tool-row">
-        <button class="chip" id="pasteImageBtn">📋 Вставить из буфера обмена</button>
-        <button class="chip" id="chooseImageBtn">🗂️ Выбрать файл</button>
-        <input type="file" id="imageFileInput" accept="image/*" style="display:none;">
-      </div>
-      <div class="tool-row" id="selectedImageRow" style="display:none;">
-        <span class="tool-label">Выбранная картинка</span>
-        <button class="chip icon-only" id="imgFrontBtn" title="На передний план">⬆️</button>
-        <button class="chip icon-only" id="imgBackBtn" title="На задний план">⬇️</button>
-        <button class="chip" id="imgDeleteBtn">🗑️ Удалить картинку</button>
-      </div>
-      <div class="tool-row">
-        <span class="tool-label" style="opacity:.7">Совет: нажмите на картинку, чтобы выбрать её — появятся точка изменения размера в углу и крестик удаления. Перетаскивайте картинку пальцем, чтобы переместить.</span>
       </div>
     </div>
-    </div></div>
   </div>
 
 </div>
@@ -650,6 +768,22 @@ input[type=color]{
 (function(){
 "use strict";
 
+/* ============================== VIEWPORT / KEYBOARD LOCK ============================== */
+// Keep the app-shell pinned to the real visible viewport so the page never
+// rides up or gets shoved around when the on-screen keyboard opens/closes.
+function setAppHeight(){
+  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  document.documentElement.style.setProperty('--app-height', h + 'px');
+}
+setAppHeight();
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', setAppHeight);
+  window.visualViewport.addEventListener('scroll', ()=>{ window.scrollTo(0,0); });
+}
+window.addEventListener('resize', setAppHeight);
+window.addEventListener('orientationchange', ()=> setTimeout(setAppHeight, 150));
+window.addEventListener('scroll', ()=> window.scrollTo(0,0));
+
 /* ============================== STORAGE ============================== */
 const STORAGE_KEY = 'dnd_journal_v1';
 const DPR = Math.max(1, window.devicePixelRatio || 1);
@@ -670,12 +804,11 @@ function blankPage(title){
     imagesVisible: true,
     strokes: [],
     images: [],
-    textHTML: '',
-    textFont: "'Spectral', serif",
-    textSize: 16,
-    textWeight: 400,
-    textColor: '#2c2011',
-    textAlign: 'left'
+    textBoxes: [{
+      id: uid(), x: 8, y: 6, w: 320,
+      html: '', font: "'Spectral', serif",
+      size: 16, weight: 400, color: '#2c2011', align: 'left'
+    }]
   };
 }
 
@@ -695,10 +828,26 @@ try{
 if(!journal || !Array.isArray(journal.pages) || journal.pages.length === 0){
   journal = defaultJournal();
 }
-// migrate pages saved before the images layer existed
+// migrate pages saved before the images layer / text-boxes existed
 journal.pages.forEach(p=>{
   if(!Array.isArray(p.images)) p.images = [];
   if(typeof p.imagesVisible !== 'boolean') p.imagesVisible = true;
+  if(!Array.isArray(p.textBoxes)){
+    if(typeof p.textHTML === 'string' && p.textHTML.trim() !== ''){
+      p.textBoxes = [{
+        id: uid(), x: 8, y: 6, w: 320,
+        html: p.textHTML,
+        font: p.textFont || "'Spectral', serif",
+        size: p.textSize || 16,
+        weight: p.textWeight || 400,
+        color: p.textColor || '#2c2011',
+        align: p.textAlign || 'left'
+      }];
+    } else {
+      p.textBoxes = [];
+    }
+  }
+  if(typeof p.textVisible !== 'boolean') p.textVisible = true;
 });
 let currentIndex = 0;
 
@@ -729,17 +878,17 @@ pageDateEl.addEventListener('input', ()=>{
 });
 const pageNumEl = $('#pageNum');
 const leafEl = $('#leaf');
-const textLayerEl = $('#textLayer');
+const textboxLayerEl = $('#textboxLayer');
 const canvasEl = $('#drawCanvas');
 const ctx = canvasEl.getContext('2d');
 const canvasWrapEl = $('.canvas-wrap');
-const controlsEl = $('#controls');
-const drawPanel = $('#drawPanel');
-const textPanel = $('#textPanel');
-const imagesPanel = $('#imagesPanel');
 const imageLayerEl = $('#imageLayer');
 const toastEl = $('#toast');
 const shapePreview = $('#shapePreview');
+const appShellEl = $('#appShell');
+const sideDockEl = $('#sideDock');
+const dockPopoverEl = $('#dockPopover');
+const dockPopoverBackdropEl = $('#dockPopoverBackdrop');
 
 let toastTimer = null;
 function showToast(msg){
@@ -753,37 +902,132 @@ function showToast(msg){
 let mode = 'draw'; // draw | text | images | view
 function setMode(m){
   mode = m;
-  $$('.mode-switch button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
-  drawPanel.style.display = m === 'draw' ? 'flex' : 'none';
-  textPanel.style.display = m === 'text' ? 'flex' : 'none';
-  imagesPanel.style.display = m === 'images' ? 'flex' : 'none';
-  controlsEl.classList.toggle('mode-draw', m === 'draw');
-  controlsEl.classList.toggle('mode-text', m === 'text');
-  controlsEl.classList.toggle('mode-images', m === 'images');
-  controlsEl.classList.toggle('mode-view', m === 'view');
+  $$('#dockModes .dock-btn[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  $('#dockToolsDraw').style.display = m === 'draw' ? 'flex' : 'none';
+  $('#dockToolsText').style.display = m === 'text' ? 'flex' : 'none';
+  $('#dockToolsImages').style.display = m === 'images' ? 'flex' : 'none';
+  closeDockPopover();
   document.querySelector('.book-viewport').classList.toggle('mode-view', m === 'view');
   document.querySelector('.book-viewport').classList.toggle('mode-text', m === 'text');
   document.querySelector('.book-viewport').classList.toggle('mode-draw', m === 'draw');
   document.querySelector('.book-viewport').classList.toggle('mode-images', m === 'images');
-  textLayerEl.contentEditable = (m === 'text') ? 'true' : 'false';
   if(m !== 'images') selectImage(null);
+  if(m !== 'draw' && typeof resetSelection === 'function') resetSelection();
+  if(m !== 'text' && typeof exitEditMode === 'function'){
+    exitEditMode();
+    if(typeof selectTextBox === 'function') selectTextBox(null);
+  }
 }
-$$('.mode-switch button[data-mode]').forEach(b => b.addEventListener('click', ()=>{
-  if(panelCollapsed){ panelCollapsed = false; updatePanelCollapse(); }
-  setMode(b.dataset.mode);
-}));
+$$('#dockModes .dock-btn[data-mode]').forEach(b => b.addEventListener('click', ()=> setMode(b.dataset.mode)));
 
-let panelCollapsed = false;
-const toolPanelWrap = $('#toolPanelWrap');
-const panelToggleBtn = $('#panelToggle');
-function updatePanelCollapse(){
-  toolPanelWrap.classList.toggle('collapsed', panelCollapsed);
-  panelToggleBtn.textContent = panelCollapsed ? '▸' : '▾';
+/* ---------- dock settings popover ---------- */
+let dockPopoverOpen = null; // 'draw' | 'text' | null
+function positionDockPopover(){
+  const dockRect = sideDockEl.getBoundingClientRect();
+  const shellRect = appShellEl.getBoundingClientRect();
+  const estH = dockPopoverEl.offsetHeight || 220;
+  let top = dockRect.top - shellRect.top;
+  top = Math.max(10, Math.min(top, shellRect.height - estH - 10));
+  dockPopoverEl.style.top = top + 'px';
+  if(sideDockEl.classList.contains('side-left')){
+    dockPopoverEl.style.left = (dockRect.right - shellRect.left + 10) + 'px';
+    dockPopoverEl.style.right = 'auto';
+  } else {
+    dockPopoverEl.style.right = (shellRect.right - dockRect.left + 10) + 'px';
+    dockPopoverEl.style.left = 'auto';
+  }
 }
-panelToggleBtn.addEventListener('click', ()=>{
-  panelCollapsed = !panelCollapsed;
-  updatePanelCollapse();
+function openDockPopover(which){
+  $('#drawSettingsPopover').style.display = which === 'draw' ? 'flex' : 'none';
+  $('#textSettingsPopover').style.display = which === 'text' ? 'flex' : 'none';
+  dockPopoverOpen = which;
+  dockPopoverEl.classList.add('open');
+  dockPopoverBackdropEl.classList.add('open');
+  positionDockPopover();
+}
+function closeDockPopover(){
+  dockPopoverOpen = null;
+  dockPopoverEl.classList.remove('open');
+  dockPopoverBackdropEl.classList.remove('open');
+}
+function toggleDockPopover(which){
+  if(dockPopoverOpen === which){ closeDockPopover(); }
+  else { openDockPopover(which); }
+}
+$('#dockDrawSettingsBtn').addEventListener('click', ()=> toggleDockPopover('draw'));
+$('#dockTextSettingsBtn').addEventListener('click', ()=> toggleDockPopover('text'));
+dockPopoverBackdropEl.addEventListener('click', closeDockPopover);
+
+/* ---------- dock drag to reposition + flip side ---------- */
+const dockGripEl = $('#dockGrip');
+let dockDragging = false, dockDragStartY = 0, dockStartTop = 0;
+function clampDockTop(top){
+  const shellH = appShellEl.getBoundingClientRect().height;
+  const dockH = sideDockEl.getBoundingClientRect().height;
+  return Math.max(60, Math.min(top, shellH - dockH - 60));
+}
+dockGripEl.addEventListener('pointerdown', (e)=>{
+  e.preventDefault();
+  dockDragging = true;
+  try{ dockGripEl.setPointerCapture(e.pointerId); }catch(err){}
+  const rect = sideDockEl.getBoundingClientRect();
+  const shellRect = appShellEl.getBoundingClientRect();
+  dockStartTop = rect.top - shellRect.top;
+  dockDragStartY = e.clientY;
+  sideDockEl.style.bottom = 'auto';
+  sideDockEl.style.top = dockStartTop + 'px';
 });
+dockGripEl.addEventListener('pointermove', (e)=>{
+  if(!dockDragging) return;
+  const dy = e.clientY - dockDragStartY;
+  sideDockEl.style.top = clampDockTop(dockStartTop + dy) + 'px';
+  if(dockPopoverOpen) positionDockPopover();
+});
+function endDockDrag(){
+  if(!dockDragging) return;
+  dockDragging = false;
+  try{ localStorage.setItem('dnd_journal_dock_top', sideDockEl.style.top); }catch(err){}
+}
+dockGripEl.addEventListener('pointerup', endDockDrag);
+dockGripEl.addEventListener('pointercancel', endDockDrag);
+
+let dockSide = 'right';
+$('#dockFlipBtn').addEventListener('click', ()=>{
+  dockSide = dockSide === 'right' ? 'left' : 'right';
+  sideDockEl.classList.toggle('side-left', dockSide === 'left');
+  dockPeekEl.classList.toggle('side-left', dockSide === 'left');
+  try{ localStorage.setItem('dnd_journal_dock_side', dockSide); }catch(err){}
+  if(dockPopoverOpen) positionDockPopover();
+});
+
+/* ---------- hide / show the whole dock ---------- */
+const dockPeekEl = $('#dockPeekBtn');
+function hideDock(){
+  const rect = sideDockEl.getBoundingClientRect();
+  const shellRect = appShellEl.getBoundingClientRect();
+  dockPeekEl.style.top = Math.max(10, rect.top - shellRect.top) + 'px';
+  dockPeekEl.classList.toggle('side-left', dockSide === 'left');
+  sideDockEl.style.display = 'none';
+  dockPeekEl.style.display = 'flex';
+  closeDockPopover();
+  try{ localStorage.setItem('dnd_journal_dock_hidden', '1'); }catch(err){}
+}
+function showDock(){
+  sideDockEl.style.display = 'flex';
+  dockPeekEl.style.display = 'none';
+  try{ localStorage.setItem('dnd_journal_dock_hidden', '0'); }catch(err){}
+}
+$('#dockHideBtn').addEventListener('click', hideDock);
+dockPeekEl.addEventListener('click', showDock);
+
+try{
+  const savedSide = localStorage.getItem('dnd_journal_dock_side');
+  if(savedSide === 'left'){ dockSide = 'left'; sideDockEl.classList.add('side-left'); }
+  const savedTop = localStorage.getItem('dnd_journal_dock_top');
+  if(savedTop){ sideDockEl.style.bottom = 'auto'; sideDockEl.style.top = savedTop; }
+  if(localStorage.getItem('dnd_journal_dock_hidden') === '1'){ hideDock(); }
+}catch(err){}
+window.addEventListener('resize', ()=>{ if(dockPopoverOpen) positionDockPopover(); });
 
 /* ============================== DRAW TOOLS STATE ============================== */
 let currentTool = 'pen';
@@ -797,32 +1041,43 @@ const TOOL_DEFAULTS = {
   line:{size:3, opacity:1},
   rect:{size:3, opacity:1},
   circle:{size:3, opacity:1},
-  arrow:{size:3, opacity:1}
+  arrow:{size:3, opacity:1},
+  select:{size:3, opacity:1}
 };
 
-$$('#brushRow .chip').forEach(btn=>{
+$$('#dockToolsDraw .dock-btn[data-tool]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    $$('#brushRow .chip').forEach(b=>b.classList.remove('active'));
+    $$('#dockToolsDraw .dock-btn[data-tool]').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
+    const prevTool = currentTool;
     currentTool = btn.dataset.tool;
+    if(prevTool === 'select' && currentTool !== 'select'){
+      resetSelection();
+    }
     const def = TOOL_DEFAULTS[currentTool];
     currentSize = def.size;
     $('#brushSize').value = def.size;
     $('#brushSizeTag').textContent = def.size;
+    if(currentTool === 'select') updateSelActionsVisibility();
   });
 });
 
-$$('#drawPanel .swatch').forEach(sw=>{
+function updateDockColorDot(){
+  $('#dockColorDot').style.background = currentColor;
+}
+$$('#drawSettingsPopover .swatch').forEach(sw=>{
   sw.addEventListener('click', ()=>{
-    $$('#drawPanel .swatch').forEach(s=>s.classList.remove('active'));
+    $$('#drawSettingsPopover .swatch').forEach(s=>s.classList.remove('active'));
     sw.classList.add('active');
     currentColor = sw.dataset.color;
     $('#drawColorCustom').value = rgbToHex(currentColor);
+    updateDockColorDot();
   });
 });
 $('#drawColorCustom').addEventListener('input', (e)=>{
   currentColor = e.target.value;
-  $$('#drawPanel .swatch').forEach(s=>s.classList.remove('active'));
+  $$('#drawSettingsPopover .swatch').forEach(s=>s.classList.remove('active'));
+  updateDockColorDot();
 });
 function rgbToHex(c){
   if(c.startsWith('#')) return c;
@@ -909,6 +1164,144 @@ let activeStroke = null;
 let shapeStart = null;
 let redoStack = [];
 
+/* selection tool state */
+let selectedStrokes = [];
+let selBBox = null;
+let selMarqueeActive = false;
+let selMarqueeStart = null;
+let lastMarqueeRect = null;
+let selDragging = false;
+let selDragStart = null;
+let selDragOrigin = [];
+
+function strokeBBox(s){
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  const pts = s.shape ? [s.start, s.end] : s.points;
+  (pts||[]).forEach(([x,y])=>{
+    if(x<minX)minX=x; if(x>maxX)maxX=x;
+    if(y<minY)minY=y; if(y>maxY)maxY=y;
+  });
+  const pad = (s.size||1)/2;
+  return {minX:minX-pad, minY:minY-pad, maxX:maxX+pad, maxY:maxY+pad};
+}
+function rectsOverlap(a,b){
+  return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
+}
+function computeSelBBox(){
+  if(selectedStrokes.length === 0){ selBBox = null; return; }
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  selectedStrokes.forEach(s=>{
+    const b = strokeBBox(s);
+    minX=Math.min(minX,b.minX); minY=Math.min(minY,b.minY);
+    maxX=Math.max(maxX,b.maxX); maxY=Math.max(maxY,b.maxY);
+  });
+  const pad = 8;
+  selBBox = {x:minX-pad, y:minY-pad, w:(maxX-minX)+pad*2, h:(maxY-minY)+pad*2};
+}
+function drawSelOverlay(rect){
+  shapePreview.innerHTML = '';
+  if(!rect) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const el = document.createElementNS(ns,'rect');
+  el.setAttribute('x', rect.x); el.setAttribute('y', rect.y);
+  el.setAttribute('width', Math.max(0,rect.w)); el.setAttribute('height', Math.max(0,rect.h));
+  el.setAttribute('fill','rgba(185,144,63,0.12)');
+  el.setAttribute('stroke','#e0b563');
+  el.setAttribute('stroke-width','1.5');
+  el.setAttribute('stroke-dasharray','6,4');
+  shapePreview.appendChild(el);
+}
+function pointInRect(x,y,r){
+  return x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h;
+}
+function updateSelActionsVisibility(){
+  const active = currentTool === 'select';
+  $('#selActionsRow').style.display = (active && selectedStrokes.length>0) ? 'flex' : 'none';
+  $('#selHintRow').style.display = (active && selectedStrokes.length===0) ? 'flex' : 'none';
+  if(active && selectedStrokes.length>0){
+    $('#selCountLabel').textContent = 'Выделено элементов: ' + selectedStrokes.length;
+  }
+}
+function resetSelection(){
+  selectedStrokes = [];
+  selBBox = null;
+  selMarqueeActive = false;
+  selDragging = false;
+  drawSelOverlay(null);
+  updateSelActionsVisibility();
+}
+$('#selDeleteBtn').addEventListener('click', ()=>{
+  if(selectedStrokes.length === 0) return;
+  const set = new Set(selectedStrokes);
+  currentPage().strokes = currentPage().strokes.filter(s => !set.has(s));
+  resetSelection();
+  redrawAll();
+  scheduleSave();
+});
+$('#selClearBtn').addEventListener('click', resetSelection);
+
+function selPointerDown(pt){
+  const [x,y] = pt;
+  if(selBBox && pointInRect(x,y,selBBox)){
+    selDragging = true;
+    selDragStart = [x,y];
+    selDragOrigin = selectedStrokes.map(s => s.shape
+      ? {start:[...s.start], end:[...s.end]}
+      : {points: s.points.map(p=>[...p])});
+  } else {
+    selectedStrokes = [];
+    selBBox = null;
+    selMarqueeActive = true;
+    selMarqueeStart = [x,y];
+    lastMarqueeRect = null;
+    drawSelOverlay(null);
+    updateSelActionsVisibility();
+  }
+}
+function selPointerMove(pt){
+  const [x,y] = pt;
+  if(selDragging){
+    const dx = x - selDragStart[0], dy = y - selDragStart[1];
+    selectedStrokes.forEach((s,i)=>{
+      const orig = selDragOrigin[i];
+      if(s.shape){
+        s.start = [orig.start[0]+dx, orig.start[1]+dy];
+        s.end = [orig.end[0]+dx, orig.end[1]+dy];
+      } else {
+        s.points = orig.points.map(p=>[p[0]+dx, p[1]+dy]);
+      }
+    });
+    computeSelBBox();
+    redrawAll();
+    drawSelOverlay(selBBox);
+  } else if(selMarqueeActive){
+    const rx = Math.min(selMarqueeStart[0], x);
+    const ry = Math.min(selMarqueeStart[1], y);
+    const rw = Math.abs(x - selMarqueeStart[0]);
+    const rh = Math.abs(y - selMarqueeStart[1]);
+    lastMarqueeRect = {x:rx,y:ry,w:rw,h:rh};
+    drawSelOverlay(lastMarqueeRect);
+  }
+}
+function selPointerUp(){
+  if(selDragging){
+    selDragging = false;
+    drawSelOverlay(selBBox);
+    scheduleSave();
+  } else if(selMarqueeActive){
+    selMarqueeActive = false;
+    if(lastMarqueeRect && (lastMarqueeRect.w > 3 || lastMarqueeRect.h > 3)){
+      const rect = {minX:lastMarqueeRect.x, minY:lastMarqueeRect.y, maxX:lastMarqueeRect.x+lastMarqueeRect.w, maxY:lastMarqueeRect.y+lastMarqueeRect.h};
+      selectedStrokes = currentPage().strokes.filter(s => rectsOverlap(strokeBBox(s), rect));
+    } else {
+      selectedStrokes = [];
+    }
+    computeSelBBox();
+    drawSelOverlay(selBBox);
+    updateSelActionsVisibility();
+  }
+}
+
 function pointerPos(e){
   const rect = canvasEl.getBoundingClientRect();
   const t = e.touches ? e.touches[0] : e;
@@ -921,9 +1314,14 @@ function onPointerDown(e){
   if(e.touches && e.touches.length > 1){
     // second finger arrived mid-stroke -> hand off to pinch-zoom, discard the stroke
     drawing = false; activeStroke = null; shapeStart = null; clearPreview(); redrawAll();
+    selDragging = false; selMarqueeActive = false;
     return;
   }
   e.preventDefault();
+  if(currentTool === 'select'){
+    selPointerDown(pointerPos(e));
+    return;
+  }
   drawing = true;
   redoStack = [];
   const [x,y] = pointerPos(e);
@@ -941,6 +1339,13 @@ function onPointerDown(e){
   }
 }
 function onPointerMove(e){
+  if(currentTool === 'select'){
+    if(!selDragging && !selMarqueeActive) return;
+    if(e.touches && e.touches.length > 1) return;
+    e.preventDefault();
+    selPointerMove(pointerPos(e));
+    return;
+  }
   if(!drawing) return;
   if(e.touches && e.touches.length > 1) return;
   e.preventDefault();
@@ -955,6 +1360,10 @@ function onPointerMove(e){
   }
 }
 function onPointerUp(e){
+  if(currentTool === 'select'){
+    selPointerUp();
+    return;
+  }
   if(!drawing) return;
   drawing = false;
   const isShape = ['line','rect','circle','arrow'].includes(currentTool);
@@ -1012,12 +1421,14 @@ $('#undoBtn').addEventListener('click', ()=>{
   const p = currentPage();
   if(p.strokes.length === 0) return;
   redoStack.push(p.strokes.pop());
+  resetSelection();
   redrawAll();
   scheduleSave();
 });
 $('#redoBtn').addEventListener('click', ()=>{
   if(redoStack.length === 0) return;
   currentPage().strokes.push(redoStack.pop());
+  resetSelection();
   redrawAll();
   scheduleSave();
 });
@@ -1025,6 +1436,7 @@ $('#clearDrawBtn').addEventListener('click', ()=>{
   if(!confirm('Стереть весь рисунок на этой странице?')) return;
   currentPage().strokes = [];
   redoStack = [];
+  resetSelection();
   redrawAll();
   scheduleSave();
 });
@@ -1095,95 +1507,298 @@ $('#zoomResetBtn').addEventListener('click', ()=>{
 });
 applyZoomTransform();
 
-/* ============================== TEXT LAYER ============================== */
-function applyPageTextStyle(){
-  const p = currentPage();
-  textLayerEl.style.fontFamily = p.textFont;
-  textLayerEl.style.fontSize = p.textSize + 'px';
-  textLayerEl.style.fontWeight = p.textWeight;
-  textLayerEl.style.color = p.textColor;
-  textLayerEl.style.textAlign = p.textAlign;
+/* ============================== TEXT BOXES ============================== */
+let selectedTextBoxId = null;
+let editingTextBoxId = null;
+let textSaveTimer = null;
 
-  $('#fontSelect').value = p.textFont;
-  $('#fontSize').value = p.textSize;
-  $('#fontSizeTag').textContent = p.textSize;
-  $('#fontWeight').value = p.textWeight;
-  $('#textColorCustom').value = p.textColor;
-  $$('#textPanel .swatch').forEach(s=> s.classList.toggle('active', s.dataset.tcolor === p.textColor));
-  $$('[data-align]').forEach(b=> b.classList.toggle('active', b.dataset.align === p.textAlign));
+function defaultTextBox(){
+  return {
+    id: uid(), x: 8, y: 6, w: 320,
+    html: '', font: "'Spectral', serif",
+    size: 16, weight: 400, color: '#2c2011', align: 'left'
+  };
 }
 
-function wrapSelectionWithStyle(styleObj){
+function getActiveTextBox(){
+  const id = editingTextBoxId || selectedTextBoxId;
+  if(!id) return null;
+  const box = currentPage().textBoxes.find(b => b.id === id);
+  return box ? { box, el: textboxLayerEl.querySelector(`.text-box[data-id="${id}"]`) } : null;
+}
+
+function updateTextToolbarState(){
+  const active = getActiveTextBox();
+  const row = $('#textEmptyRow');
+  const editBtn = $('#editTextBoxBtn');
+  const delBtn = $('#deleteTextBoxBtn');
+  if(!active){
+    row.style.display = 'flex';
+    editBtn.style.display = 'none';
+    delBtn.style.display = 'none';
+    return;
+  }
+  row.style.display = 'none';
+  editBtn.style.display = 'flex';
+  delBtn.style.display = 'flex';
+  const { box } = active;
+  $('#fontSelect').value = box.font;
+  $('#fontSize').value = box.size;
+  $('#fontSizeTag').textContent = box.size;
+  $('#fontWeight').value = box.weight;
+  $('#textColorCustom').value = box.color;
+  $$('#textSettingsPopover .swatch').forEach(s => s.classList.toggle('active', s.dataset.tcolor === box.color));
+  $$('[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === box.align));
+}
+
+function selectTextBox(id){
+  selectedTextBoxId = id;
+  $$('.text-box').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+  updateTextToolbarState();
+}
+
+function enterEditMode(id){
+  if(editingTextBoxId && editingTextBoxId !== id) exitEditMode();
+  editingTextBoxId = id;
+  selectedTextBoxId = id;
+  const el = textboxLayerEl.querySelector(`.text-box[data-id="${id}"]`);
+  if(!el) return;
+  el.classList.add('editing');
+  el.classList.add('selected');
+  const inner = el.querySelector('.text-box-inner');
+  inner.contentEditable = 'true';
+  inner.focus();
+  updateTextToolbarState();
+}
+
+function exitEditMode(){
+  if(!editingTextBoxId) return;
+  const id = editingTextBoxId;
+  const el = textboxLayerEl.querySelector(`.text-box[data-id="${id}"]`);
+  if(el){
+    el.classList.remove('editing');
+    const inner = el.querySelector('.text-box-inner');
+    inner.contentEditable = 'false';
+  }
+  editingTextBoxId = null;
+  updateTextToolbarState();
+  save();
+}
+
+function addTextBox(){
+  const page = currentPage();
+  const box = defaultTextBox();
+  const rect = textboxLayerEl.getBoundingClientRect();
+  if(rect.width > 40){
+    box.w = Math.min(320, rect.width - 24);
+    box.x = 8;
+    box.y = Math.max(6, page.textBoxes.length * 14 + 6);
+  }
+  page.textBoxes.push(box);
+  renderTextBoxes();
+  selectTextBox(box.id);
+  scheduleSave();
+  enterEditMode(box.id);
+}
+$('#dockAddTextBtn').addEventListener('click', addTextBox);
+
+function applyStyleToActiveBox(styleObj){
+  const active = getActiveTextBox();
+  if(!active) return;
+  const { box, el } = active;
+  const inner = el ? el.querySelector('.text-box-inner') : null;
   const sel = window.getSelection();
-  if(!sel || sel.rangeCount === 0 || sel.isCollapsed){
-    // no selection -> apply as page base style
-    const p = currentPage();
-    if('fontFamily' in styleObj) p.textFont = styleObj.fontFamily;
-    if('fontSize' in styleObj) p.textSize = parseInt(styleObj.fontSize,10);
-    if('fontWeight' in styleObj) p.textWeight = styleObj.fontWeight;
-    if('color' in styleObj) p.textColor = styleObj.color;
-    if('fontStyle' in styleObj){
-      const cur = textLayerEl.style.fontStyle === 'italic';
-      textLayerEl.style.fontStyle = cur ? 'normal' : 'italic';
+  const hasLiveSelection = editingTextBoxId === box.id && inner && sel && sel.rangeCount > 0 && !sel.isCollapsed &&
+    inner.contains(sel.getRangeAt(0).commonAncestorContainer);
+
+  if(hasLiveSelection){
+    const range = sel.getRangeAt(0);
+    const span = document.createElement('span');
+    Object.keys(styleObj).forEach(k=>{ span.style[k] = styleObj[k]; });
+    try{ range.surroundContents(span); }
+    catch(err){
+      const frag = range.extractContents();
+      span.appendChild(frag);
+      range.insertNode(span);
     }
-    if('textDecoration' in styleObj){
-      const cur = textLayerEl.style.textDecoration === 'underline';
-      textLayerEl.style.textDecoration = cur ? 'none' : 'underline';
-    }
-    applyPageTextStyle();
+    sel.removeAllRanges();
+    box.html = inner.innerHTML;
     scheduleSave();
     return;
   }
-  const range = sel.getRangeAt(0);
-  if(!textLayerEl.contains(range.commonAncestorContainer)) return;
-  const span = document.createElement('span');
-  Object.keys(styleObj).forEach(k=>{ span.style[k] = styleObj[k]; });
-  try{
-    range.surroundContents(span);
-  }catch(err){
-    const frag = range.extractContents();
-    span.appendChild(frag);
-    range.insertNode(span);
+
+  // no live selection -> treat as the box's base style
+  if('fontFamily' in styleObj) box.font = styleObj.fontFamily;
+  if('fontSize' in styleObj) box.size = parseInt(styleObj.fontSize,10);
+  if('fontWeight' in styleObj) box.weight = styleObj.fontWeight;
+  if('color' in styleObj) box.color = styleObj.color;
+  if(inner){
+    if('fontStyle' in styleObj){
+      const cur = inner.style.fontStyle === 'italic';
+      inner.style.fontStyle = cur ? 'normal' : 'italic';
+    }
+    if('textDecoration' in styleObj){
+      const cur = inner.style.textDecoration === 'underline';
+      inner.style.textDecoration = cur ? 'none' : 'underline';
+    }
+    inner.style.fontFamily = box.font;
+    inner.style.fontSize = box.size + 'px';
+    inner.style.fontWeight = box.weight;
+    inner.style.color = box.color;
   }
-  sel.removeAllRanges();
-  onTextInput();
+  scheduleSave();
 }
 
-$('#fontSelect').addEventListener('change', (e)=> wrapSelectionWithStyle({fontFamily:e.target.value}));
+$('#fontSelect').addEventListener('change', (e)=> applyStyleToActiveBox({fontFamily:e.target.value}));
 $('#fontSize').addEventListener('input', (e)=>{
   $('#fontSizeTag').textContent = e.target.value;
 });
-$('#fontSize').addEventListener('change', (e)=> wrapSelectionWithStyle({fontSize: e.target.value+'px'}));
-$('#fontWeight').addEventListener('change', (e)=> wrapSelectionWithStyle({fontWeight: e.target.value}));
-$('#italicBtn').addEventListener('click', ()=> wrapSelectionWithStyle({fontStyle:'italic'}));
-$('#underlineBtn').addEventListener('click', ()=> wrapSelectionWithStyle({textDecoration:'underline'}));
-$$('#textPanel .swatch').forEach(sw=>{
-  sw.addEventListener('click', ()=>{
-    wrapSelectionWithStyle({color: sw.dataset.tcolor});
-  });
+$('#fontSize').addEventListener('change', (e)=> applyStyleToActiveBox({fontSize: e.target.value+'px'}));
+$('#fontWeight').addEventListener('change', (e)=> applyStyleToActiveBox({fontWeight: e.target.value}));
+$('#italicBtn').addEventListener('click', ()=> applyStyleToActiveBox({fontStyle:'italic'}));
+$('#underlineBtn').addEventListener('click', ()=> applyStyleToActiveBox({textDecoration:'underline'}));
+$$('#textSettingsPopover .swatch').forEach(sw=>{
+  sw.addEventListener('click', ()=> applyStyleToActiveBox({color: sw.dataset.tcolor}));
 });
-$('#textColorCustom').addEventListener('input', (e)=> wrapSelectionWithStyle({color:e.target.value}));
+$('#textColorCustom').addEventListener('input', (e)=> applyStyleToActiveBox({color:e.target.value}));
 $$('[data-align]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    currentPage().textAlign = btn.dataset.align;
-    applyPageTextStyle();
+    const active = getActiveTextBox();
+    if(!active) return;
+    active.box.align = btn.dataset.align;
+    if(active.el){
+      const inner = active.el.querySelector('.text-box-inner');
+      if(inner) inner.style.textAlign = active.box.align;
+    }
+    updateTextToolbarState();
     scheduleSave();
   });
 });
-$('#clearTextBtn').addEventListener('click', ()=>{
-  if(!confirm('Стереть весь текст на этой странице?')) return;
-  textLayerEl.innerHTML = '';
-  currentPage().textHTML = '';
+$('#deleteTextBoxBtn').addEventListener('click', ()=>{
+  const active = getActiveTextBox();
+  if(!active) return;
+  if(editingTextBoxId === active.box.id) editingTextBoxId = null;
+  currentPage().textBoxes = currentPage().textBoxes.filter(b => b.id !== active.box.id);
+  renderTextBoxes();
   scheduleSave();
 });
+$('#editTextBoxBtn').addEventListener('click', ()=>{
+  const active = getActiveTextBox();
+  if(active) enterEditMode(active.box.id);
+});
 
-let textSaveTimer = null;
-function onTextInput(){
-  currentPage().textHTML = textLayerEl.innerHTML;
-  clearTimeout(textSaveTimer);
-  textSaveTimer = setTimeout(save, 400);
+function buildTextBoxEl(box){
+  const wrap = document.createElement('div');
+  wrap.className = 'text-box';
+  wrap.dataset.id = box.id;
+  wrap.style.left = box.x + 'px';
+  wrap.style.top = box.y + 'px';
+  wrap.style.width = box.w + 'px';
+
+  const inner = document.createElement('div');
+  inner.className = 'text-box-inner';
+  inner.contentEditable = 'false';
+  inner.setAttribute('data-placeholder', 'Текст…');
+  inner.innerHTML = box.html || '';
+  inner.style.fontFamily = box.font;
+  inner.style.fontSize = box.size + 'px';
+  inner.style.fontWeight = box.weight;
+  inner.style.color = box.color;
+  inner.style.textAlign = box.align;
+  wrap.appendChild(inner);
+
+  const delBtn = document.createElement('div'); delBtn.className = 'tb-del'; delBtn.textContent = '×';
+  const editBtn = document.createElement('div'); editBtn.className = 'tb-edit'; editBtn.textContent = '✎';
+  const doneBtn = document.createElement('div'); doneBtn.className = 'tb-done'; doneBtn.textContent = '✓';
+  const resizeHandle = document.createElement('div'); resizeHandle.className = 'tb-resize';
+  wrap.appendChild(delBtn); wrap.appendChild(editBtn); wrap.appendChild(doneBtn); wrap.appendChild(resizeHandle);
+
+  let dragging = false, resizing = false, dragStart = null, boxStart = null;
+
+  wrap.addEventListener('pointerdown', (e)=>{
+    if(mode !== 'text') return;
+    if(e.target === delBtn){
+      e.preventDefault();
+      if(editingTextBoxId === box.id) editingTextBoxId = null;
+      currentPage().textBoxes = currentPage().textBoxes.filter(b => b.id !== box.id);
+      renderTextBoxes();
+      scheduleSave();
+      return;
+    }
+    if(e.target === editBtn){ e.preventDefault(); enterEditMode(box.id); return; }
+    if(e.target === doneBtn){ e.preventDefault(); exitEditMode(); return; }
+    if(box.id === editingTextBoxId){
+      selectTextBox(box.id);
+      return; // let native caret/selection happen inside the editable box
+    }
+    selectTextBox(box.id);
+    e.preventDefault(); e.stopPropagation();
+    try{ wrap.setPointerCapture(e.pointerId); }catch(err){}
+    if(e.target === resizeHandle){
+      resizing = true;
+      boxStart = { w: box.w };
+      dragStart = { x: e.clientX, y: e.clientY };
+    } else {
+      dragging = true;
+      boxStart = { x: box.x, y: box.y };
+      dragStart = { x: e.clientX, y: e.clientY };
+    }
+  });
+  wrap.addEventListener('pointermove', (e)=>{
+    if(!dragging && !resizing) return;
+    const dx = (e.clientX - dragStart.x) / zoomScale;
+    const dy = (e.clientY - dragStart.y) / zoomScale;
+    if(dragging){
+      box.x = boxStart.x + dx;
+      box.y = boxStart.y + dy;
+      wrap.style.left = box.x + 'px';
+      wrap.style.top = box.y + 'px';
+    } else if(resizing){
+      box.w = Math.max(60, boxStart.w + dx);
+      wrap.style.width = box.w + 'px';
+    }
+  });
+  function endDrag(){
+    if(dragging || resizing){ dragging = false; resizing = false; scheduleSave(); }
+  }
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+  wrap.addEventListener('dblclick', ()=>{ if(mode === 'text') enterEditMode(box.id); });
+
+  inner.addEventListener('input', ()=>{
+    box.html = inner.innerHTML;
+    clearTimeout(textSaveTimer);
+    textSaveTimer = setTimeout(save, 400);
+  });
+  inner.addEventListener('blur', ()=>{
+    if(editingTextBoxId === box.id) exitEditMode();
+  });
+
+  return wrap;
 }
-textLayerEl.addEventListener('input', onTextInput);
+
+textboxLayerEl.addEventListener('pointerdown', (e)=>{
+  if(mode !== 'text') return;
+  if(e.target === textboxLayerEl){
+    if(editingTextBoxId) exitEditMode();
+    selectTextBox(null);
+  }
+});
+
+function renderTextBoxes(){
+  textboxLayerEl.innerHTML = '';
+  const page = currentPage();
+  page.textBoxes.forEach(box => textboxLayerEl.appendChild(buildTextBoxEl(box)));
+  if(page.textBoxes.length === 0){
+    const hint = document.createElement('div');
+    hint.className = 'textbox-empty-hint';
+    hint.textContent = 'Нажмите «Добавить блок текста», чтобы начать писать';
+    textboxLayerEl.appendChild(hint);
+  }
+  selectedTextBoxId = null;
+  editingTextBoxId = null;
+  updateTextToolbarState();
+}
 
 /* ============================== LAYER TOGGLES ============================== */
 $('#toggleDraw').addEventListener('click', ()=>{
@@ -1196,7 +1811,7 @@ $('#toggleDraw').addEventListener('click', ()=>{
 $('#toggleText').addEventListener('click', ()=>{
   const p = currentPage();
   p.textVisible = !p.textVisible;
-  textLayerEl.style.display = p.textVisible ? 'block' : 'none';
+  textboxLayerEl.style.display = p.textVisible ? 'block' : 'none';
   $('#toggleText').classList.toggle('off', !p.textVisible);
   scheduleSave();
 });
@@ -1269,9 +1884,9 @@ async function pasteFromClipboard(){
     showToast('Не удалось прочитать буфер обмена — попробуйте выбрать файл');
   }
 }
-$('#pasteImageBtn').addEventListener('click', pasteFromClipboard);
+$('#dockPasteImgBtn').addEventListener('click', pasteFromClipboard);
 
-$('#chooseImageBtn').addEventListener('click', ()=> $('#imageFileInput').click());
+$('#dockChooseImgBtn').addEventListener('click', ()=> $('#imageFileInput').click());
 $('#imageFileInput').addEventListener('change', async (e)=>{
   const file = e.target.files[0];
   e.target.value = '';
@@ -1305,7 +1920,10 @@ document.addEventListener('paste', async (e)=>{
 function selectImage(id){
   selectedImageId = id;
   $$('.img-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
-  $('#selectedImageRow').style.display = id ? 'flex' : 'none';
+  const disp = id ? 'flex' : 'none';
+  $('#imgFrontBtn').style.display = disp;
+  $('#imgBackBtn').style.display = disp;
+  $('#imgDeleteBtn').style.display = disp;
 }
 
 function renderImages(){
@@ -1436,6 +2054,8 @@ $('#imgBackBtn').addEventListener('click', ()=>{
 /* ============================== PAGE NAV / RENDER ============================== */
 function renderPage(direction){
   const p = currentPage();
+  resetSelection();
+  if(typeof closeDockPopover === 'function') closeDockPopover();
   zoomScale = 1; panX = 0; panY = 0;
   applyZoomTransform();
   journalTitleEl.textContent = journal.title;
@@ -1444,9 +2064,8 @@ function renderPage(direction){
   pageTitleEl.value = p.title;
   pageDateEl.value = p.date;
 
-  textLayerEl.innerHTML = p.textHTML || '';
-  applyPageTextStyle();
-  textLayerEl.style.display = p.textVisible ? 'block' : 'none';
+  renderTextBoxes();
+  textboxLayerEl.style.display = p.textVisible ? 'block' : 'none';
   canvasWrapEl.style.display = p.drawVisible ? 'block' : 'none';
   imageLayerEl.style.display = p.imagesVisible ? 'block' : 'none';
   $('#toggleDraw').classList.toggle('off', !p.drawVisible);
