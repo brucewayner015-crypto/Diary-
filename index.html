@@ -2214,7 +2214,7 @@ $('#openSettingsBtn').addEventListener('click', openSettings);
 $('#backToMenuBtn').addEventListener('click', openMenu);
 
 /* ============================== SETTINGS ============================== */
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 function updateSettingsInfo(){
   $('#appVersionLabel').textContent = APP_VERSION;
   try{
@@ -2228,21 +2228,35 @@ function updateSettingsInfo(){
 
 $('#checkUpdatesBtn').addEventListener('click', async ()=>{
   showToast('Проверяю обновления…');
+  const timeout = (ms) => new Promise((_, rej) => setTimeout(()=> rej(new Error('timeout')), ms));
+  let reloaded = false;
+  const doReload = ()=>{
+    if(reloaded) return;
+    reloaded = true;
+    // journal data lives in localStorage under STORAGE_KEY — untouched by any of this
+    window.location.reload();
+  };
   try{
-    if('serviceWorker' in navigator){
-      const reg = await navigator.serviceWorker.getRegistration();
-      if(reg){ await reg.update(); }
-    }
-    if('caches' in window){
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
-    }
-    // journal data lives in localStorage under STORAGE_KEY — untouched by any of the above
+    await Promise.race([
+      (async () => {
+        if('caches' in window){
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        if('serviceWorker' in navigator){
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+      })(),
+      timeout(6000)
+    ]);
     showToast('Готово — перезагружаю…');
-    setTimeout(()=> window.location.reload(), 500);
   }catch(err){
-    showToast('Не удалось проверить обновления');
+    showToast('Не всё удалось очистить — перезагружаю как есть…');
   }
+  setTimeout(doReload, 500);
+  // absolute safety net: reload no matter what, even if something above hangs
+  setTimeout(doReload, 4000);
 });
 
 $('#resetDockBtn').addEventListener('click', ()=>{
