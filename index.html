@@ -249,22 +249,6 @@ body{
   will-change:transform;
 }
 .zoom-wrap.no-transition{transition:none !important;}
-.zoom-bar{
-  position:absolute;left:50%;bottom:8px;transform:translateX(-50%);
-  display:flex;align-items:center;gap:5px;
-  background:linear-gradient(180deg,#2c2114,#1c140c);
-  border:1px solid var(--gold);border-radius:20px;
-  padding:4px 5px;z-index:16;
-  box-shadow:0 4px 12px rgba(0,0,0,.45);
-}
-.zoom-bar button{
-  width:25px;height:25px;border-radius:50%;border:1px solid #4a3826;
-  background:transparent;color:var(--gold-bright);font-size:15px;line-height:1;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
-  font-family:var(--font-body);
-}
-.zoom-bar button:active{transform:scale(.9);}
-.zoom-bar span{font-family:var(--font-mono);font-size:10.5px;color:var(--parchment-shadow);min-width:32px;text-align:center;}
 .leaf{
   position:absolute;inset:0;
   border-radius:var(--radius-m);
@@ -446,7 +430,7 @@ canvas.draw-layer{width:100%;height:100%;display:block;touch-action:none;}
   bottom:90px;
   z-index:28;
   display:flex;flex-direction:column;align-items:center;gap:5px;
-  background:linear-gradient(180deg,rgba(44,33,20,.95),rgba(28,20,12,.95));
+  background:linear-gradient(180deg,rgba(44,33,20,.8),rgba(28,20,12,.8));
   border:1px solid var(--gold);
   border-radius:22px;
   padding:7px 5px;
@@ -620,12 +604,6 @@ input[type=color]{
         <div class="page-num" id="pageNum">1</div>
       </div>
       </div>
-      <div class="zoom-bar">
-        <button id="zoomOutBtn" title="Уменьшить">−</button>
-        <span id="zoomPct">100%</span>
-        <button id="zoomInBtn" title="Увеличить">+</button>
-        <button id="zoomResetBtn" title="Сбросить масштаб">⤾</button>
-      </div>
     </div>
   </div>
 
@@ -702,8 +680,12 @@ input[type=color]{
       </div>
       <div class="tool-row" id="selActionsRow" style="display:none;">
         <span class="tool-label" id="selCountLabel">Выделено: 0</span>
+        <button class="chip icon-only" id="selCopyBtn" title="Копировать">📋</button>
         <button class="chip" id="selDeleteBtn">🗑️ Удалить выделенное</button>
         <button class="chip" id="selClearBtn">✕ Снять выделение</button>
+      </div>
+      <div class="tool-row" id="selPasteRow" style="display:none;">
+        <button class="chip" id="selPasteBtn">📌 Вставить скопированное</button>
       </div>
       <div class="tool-row" id="selHintRow" style="display:none;">
         <span class="tool-label" style="opacity:.7">Обведите рисунок рамкой, чтобы выделить, затем перетащите его пальцем.</span>
@@ -798,16 +780,7 @@ input[type=color]{
   </div>
 
   <div class="menu-row" id="checkUpdatesBtn"><span class="ico">🔄</span>Проверить обновления</div>
-  <div class="settings-note">Обновление подтягивает новую версию интерфейса и шрифтов. Страницы, рисунки и картинки хранятся отдельно на устройстве и никогда не стираются при обновлении.</div>
-
-  <div class="menu-hr"></div>
-  <div class="menu-row" id="resetDockBtn"><span class="ico">📍</span>Сбросить положение панели инструментов</div>
-
-  <div class="menu-hr"></div>
-  <div class="settings-block">
-    <strong class="settings-help-title">Приложение не устанавливается, а просто открывает Chrome?</strong>
-    <div class="settings-note">Значит страница открыта локально (file://) или без HTTPS — так браузер умеет делать только обычный ярлык. Установка настоящего приложения (PWA) работает лишь с настоящего https-адреса. Залейте всю папку — index.html, manifest.json, service-worker.js и icons/ — на GitHub Pages (бесплатно раздаёт по HTTPS) и откройте эту ссылку в Chrome на телефоне: появится настоящее предложение «Установить приложение» / «Добавить на экран».</div>
-  </div>
+  <div class="menu-row" id="resetDockBtn"><span class="ico">📍</span>Сбросить панель инструментов</div>
 
   <div class="menu-hr"></div>
   <div class="menu-row" id="backToMenuBtn"><span class="ico">←</span>Назад</div>
@@ -821,15 +794,26 @@ input[type=color]{
 
 /* ============================== VIEWPORT / KEYBOARD LOCK ============================== */
 // Keep the app-shell pinned to the real visible viewport so the page never
-// rides up or gets shoved around when the on-screen keyboard opens/closes.
+// rides up, and no blank gap is left, when the on-screen keyboard opens/closes.
 function setAppHeight(){
-  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
-  document.documentElement.style.setProperty('--app-height', h + 'px');
+  const vv = window.visualViewport;
+  const h = vv ? vv.height : window.innerHeight;
+  const px = h + 'px';
+  document.documentElement.style.setProperty('--app-height', px);
+  document.documentElement.style.height = px;
+  document.body.style.height = px;
+  const shell = document.getElementById('appShell');
+  if(shell) shell.style.height = px;
+  if(vv && (vv.offsetTop || vv.offsetLeft)){
+    document.body.style.transform = 'translate(' + (-vv.offsetLeft) + 'px,' + (-vv.offsetTop) + 'px)';
+  } else {
+    document.body.style.transform = 'none';
+  }
 }
 setAppHeight();
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize', setAppHeight);
-  window.visualViewport.addEventListener('scroll', ()=>{ window.scrollTo(0,0); });
+  window.visualViewport.addEventListener('scroll', setAppHeight);
 }
 window.addEventListener('resize', setAppHeight);
 window.addEventListener('orientationchange', ()=> setTimeout(setAppHeight, 150));
@@ -1224,6 +1208,7 @@ let lastMarqueeRect = null;
 let selDragging = false;
 let selDragStart = null;
 let selDragOrigin = [];
+let strokeClipboard = [];
 
 function strokeBBox(s){
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
@@ -1249,18 +1234,31 @@ function computeSelBBox(){
   const pad = 8;
   selBBox = {x:minX-pad, y:minY-pad, w:(maxX-minX)+pad*2, h:(maxY-minY)+pad*2};
 }
-function drawSelOverlay(rect){
+function drawSelOverlay(rect, showHandles){
   shapePreview.innerHTML = '';
   if(!rect) return;
   const ns = 'http://www.w3.org/2000/svg';
+  const w = Math.max(0, rect.w), h = Math.max(0, rect.h);
   const el = document.createElementNS(ns,'rect');
   el.setAttribute('x', rect.x); el.setAttribute('y', rect.y);
-  el.setAttribute('width', Math.max(0,rect.w)); el.setAttribute('height', Math.max(0,rect.h));
-  el.setAttribute('fill','rgba(185,144,63,0.12)');
+  el.setAttribute('width', w); el.setAttribute('height', h);
+  el.setAttribute('fill', showHandles ? 'rgba(224,181,99,0.22)' : 'rgba(185,144,63,0.14)');
   el.setAttribute('stroke','#e0b563');
-  el.setAttribute('stroke-width','1.5');
-  el.setAttribute('stroke-dasharray','6,4');
+  el.setAttribute('stroke-width', showHandles ? '2.5' : '1.5');
+  el.setAttribute('stroke-dasharray','7,5');
   shapePreview.appendChild(el);
+  if(showHandles){
+    const corners = [[rect.x,rect.y],[rect.x+w,rect.y],[rect.x,rect.y+h],[rect.x+w,rect.y+h]];
+    corners.forEach(([cx,cy])=>{
+      const c = document.createElementNS(ns,'circle');
+      c.setAttribute('cx', cx); c.setAttribute('cy', cy);
+      c.setAttribute('r', 5.5);
+      c.setAttribute('fill', '#e0b563');
+      c.setAttribute('stroke', '#1c140c');
+      c.setAttribute('stroke-width', '1.5');
+      shapePreview.appendChild(c);
+    });
+  }
 }
 function pointInRect(x,y,r){
   return x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h;
@@ -1269,6 +1267,7 @@ function updateSelActionsVisibility(){
   const active = currentTool === 'select';
   $('#selActionsRow').style.display = (active && selectedStrokes.length>0) ? 'flex' : 'none';
   $('#selHintRow').style.display = (active && selectedStrokes.length===0) ? 'flex' : 'none';
+  $('#selPasteRow').style.display = (active && strokeClipboard.length>0) ? 'flex' : 'none';
   if(active && selectedStrokes.length>0){
     $('#selCountLabel').textContent = 'Выделено элементов: ' + selectedStrokes.length;
   }
@@ -1290,6 +1289,34 @@ $('#selDeleteBtn').addEventListener('click', ()=>{
   scheduleSave();
 });
 $('#selClearBtn').addEventListener('click', resetSelection);
+$('#selCopyBtn').addEventListener('click', ()=>{
+  if(selectedStrokes.length === 0) return;
+  strokeClipboard = selectedStrokes.map(s => JSON.parse(JSON.stringify(s)));
+  updateSelActionsVisibility();
+  showToast('Скопировано: ' + strokeClipboard.length + ' эл.');
+});
+$('#selPasteBtn').addEventListener('click', ()=>{
+  if(strokeClipboard.length === 0) return;
+  const offset = 18;
+  const pasted = strokeClipboard.map(s=>{
+    const clone = JSON.parse(JSON.stringify(s));
+    if(clone.shape){
+      clone.start = [clone.start[0]+offset, clone.start[1]+offset];
+      clone.end = [clone.end[0]+offset, clone.end[1]+offset];
+    } else if(clone.points){
+      clone.points = clone.points.map(p=>[p[0]+offset, p[1]+offset]);
+    }
+    return clone;
+  });
+  currentPage().strokes.push(...pasted);
+  selectedStrokes = pasted;
+  computeSelBBox();
+  redrawAll();
+  drawSelOverlay(selBBox, true);
+  updateSelActionsVisibility();
+  scheduleSave();
+  showToast('Вставлено');
+});
 
 function selPointerDown(pt){
   const [x,y] = pt;
@@ -1324,7 +1351,7 @@ function selPointerMove(pt){
     });
     computeSelBBox();
     redrawAll();
-    drawSelOverlay(selBBox);
+    drawSelOverlay(selBBox, true);
   } else if(selMarqueeActive){
     const rx = Math.min(selMarqueeStart[0], x);
     const ry = Math.min(selMarqueeStart[1], y);
@@ -1337,7 +1364,7 @@ function selPointerMove(pt){
 function selPointerUp(){
   if(selDragging){
     selDragging = false;
-    drawSelOverlay(selBBox);
+    drawSelOverlay(selBBox, true);
     scheduleSave();
   } else if(selMarqueeActive){
     selMarqueeActive = false;
@@ -1348,7 +1375,7 @@ function selPointerUp(){
       selectedStrokes = [];
     }
     computeSelBBox();
-    drawSelOverlay(selBBox);
+    drawSelOverlay(selBBox, true);
     updateSelActionsVisibility();
   }
 }
@@ -1495,13 +1522,11 @@ $('#clearDrawBtn').addEventListener('click', ()=>{
 /* ============================== ZOOM / PAN ============================== */
 const zoomWrapEl = $('#zoomWrap');
 const pageStageEl = $('.page-stage');
-const zoomPctEl = $('#zoomPct');
 let zoomScale = 1, panX = 0, panY = 0;
 let pinchStartDist = null, pinchStartScale = 1, pinchStartMid = null, panStart = null;
 
 function applyZoomTransform(){
   zoomWrapEl.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
-  zoomPctEl.textContent = Math.round(zoomScale*100) + '%';
 }
 function clampPan(){
   const stage = pageStageEl.getBoundingClientRect();
@@ -1545,17 +1570,6 @@ pageStageEl.addEventListener('touchend', (e)=>{
   }
 });
 
-$('#zoomInBtn').addEventListener('click', ()=>{
-  zoomScale = Math.min(4, Math.round((zoomScale + 0.25)*100)/100);
-  clampPan(); applyZoomTransform();
-});
-$('#zoomOutBtn').addEventListener('click', ()=>{
-  zoomScale = Math.max(1, Math.round((zoomScale - 0.25)*100)/100);
-  clampPan(); applyZoomTransform();
-});
-$('#zoomResetBtn').addEventListener('click', ()=>{
-  zoomScale = 1; panX = 0; panY = 0; applyZoomTransform();
-});
 applyZoomTransform();
 
 /* ============================== TEXT BOXES ============================== */
@@ -2190,7 +2204,7 @@ $('#openSettingsBtn').addEventListener('click', openSettings);
 $('#backToMenuBtn').addEventListener('click', openMenu);
 
 /* ============================== SETTINGS ============================== */
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 function updateSettingsInfo(){
   $('#appVersionLabel').textContent = APP_VERSION;
   try{
