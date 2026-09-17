@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Дневник искателя</title>
 <meta name="theme-color" content="#1b1410">
 <link rel="manifest" href="manifest.json">
@@ -90,7 +90,6 @@ body{
   color:var(--ink);
   font-family:var(--font-body);
   height:100dvh;
-  height:calc(var(--app-height, 100dvh));
   -webkit-font-smoothing:antialiased;
   overflow:hidden;
 }
@@ -444,7 +443,7 @@ canvas.draw-layer{width:100%;height:100%;display:block;touch-action:none;}
   border-radius:22px;
   padding:7px 5px;
   box-shadow:0 6px 20px rgba(0,0,0,.5);
-  max-height:calc(var(--app-height, 100dvh) - 130px);
+  max-height:calc(100dvh - 130px);
   overflow-y:auto;
   scrollbar-width:none;
 }
@@ -516,7 +515,7 @@ canvas.draw-layer{width:100%;height:100%;display:block;touch-action:none;}
   box-shadow:0 10px 30px rgba(0,0,0,.55);
   padding:10px 10px 12px;
   display:none;
-  max-height:min(420px, calc(var(--app-height, 100dvh) - 110px));
+  max-height:min(420px, calc(100dvh - 110px));
   overflow-y:auto;
 }
 .dock-popover.open{display:block;}
@@ -800,33 +799,6 @@ input[type=color]{
 <script>
 (function(){
 "use strict";
-
-/* ============================== VIEWPORT / KEYBOARD LOCK ============================== */
-// Keep the app-shell pinned to the real visible viewport so the page never
-// rides up, and no blank gap is left, when the on-screen keyboard opens/closes.
-function setAppHeight(){
-  const vv = window.visualViewport;
-  const h = vv ? vv.height : window.innerHeight;
-  const px = h + 'px';
-  document.documentElement.style.setProperty('--app-height', px);
-  document.documentElement.style.height = px;
-  document.body.style.height = px;
-  const shell = document.getElementById('appShell');
-  if(shell) shell.style.height = px;
-  if(vv && (vv.offsetTop || vv.offsetLeft)){
-    document.body.style.transform = 'translate(' + (-vv.offsetLeft) + 'px,' + (-vv.offsetTop) + 'px)';
-  } else {
-    document.body.style.transform = 'none';
-  }
-}
-setAppHeight();
-if(window.visualViewport){
-  window.visualViewport.addEventListener('resize', setAppHeight);
-  window.visualViewport.addEventListener('scroll', setAppHeight);
-}
-window.addEventListener('resize', setAppHeight);
-window.addEventListener('orientationchange', ()=> setTimeout(setAppHeight, 150));
-window.addEventListener('scroll', ()=> window.scrollTo(0,0));
 
 /* ============================== STORAGE ============================== */
 const STORAGE_KEY = 'dnd_journal_v1';
@@ -2219,7 +2191,7 @@ $('#openSettingsBtn').addEventListener('click', openSettings);
 $('#backToMenuBtn').addEventListener('click', openMenu);
 
 /* ============================== SETTINGS ============================== */
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.6.0';
 function updateSettingsInfo(){
   $('#appVersionLabel').textContent = APP_VERSION;
   try{
