@@ -70,6 +70,15 @@
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+.leaf, .leaf *{
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.text-box-inner[contenteditable="true"], .p-title, .p-date{
+  -webkit-user-select:text;
+  user-select:text;
+}
 html,body{margin:0;padding:0;overscroll-behavior:none;height:100%;}
 html{position:fixed;inset:0;width:100%;overflow:hidden;}
 body{
@@ -1494,6 +1503,7 @@ window.addEventListener('mouseup', onPointerUp);
 canvasEl.addEventListener('touchstart', onPointerDown, {passive:false});
 canvasEl.addEventListener('touchmove', onPointerMove, {passive:false});
 canvasEl.addEventListener('touchend', onPointerUp);
+canvasEl.addEventListener('touchcancel', onPointerUp);
 
 $('#undoBtn').addEventListener('click', ()=>{
   const p = currentPage();
@@ -2204,7 +2214,7 @@ $('#openSettingsBtn').addEventListener('click', openSettings);
 $('#backToMenuBtn').addEventListener('click', openMenu);
 
 /* ============================== SETTINGS ============================== */
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 function updateSettingsInfo(){
   $('#appVersionLabel').textContent = APP_VERSION;
   try{
