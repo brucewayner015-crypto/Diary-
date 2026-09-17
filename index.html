@@ -174,6 +174,25 @@ body{
 .menu-row .ico{width:22px;text-align:center;font-size:16px;}
 .menu-row.danger{color:#e59a9a;}
 .menu-hr{height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:8px 0;opacity:.5;}
+.settings-block{
+  background:rgba(185,144,63,.06);
+  border:1px solid #4a3826;
+  border-radius:var(--radius-s);
+  padding:10px 12px;margin:6px 0;
+}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;color:var(--parchment);padding:4px 0;
+}
+.settings-value{font-family:var(--font-mono);color:var(--gold-bright);font-size:12px;}
+.settings-help-title{
+  display:block;color:var(--gold-bright);font-size:12.5px;margin-bottom:6px;
+  font-family:var(--font-display);font-weight:600;
+}
+.settings-note{
+  font-size:11.5px;line-height:1.5;color:var(--parchment-shadow);opacity:.9;
+  padding:2px 10px 4px;
+}
 #importFile{display:none;}
 
 /* ---------- BOOK VIEWPORT ---------- */
@@ -759,7 +778,39 @@ input[type=color]{
   <div class="menu-row" id="importBtn"><span class="ico">📥</span>Импорт из JSON</div>
   <input type="file" id="importFile" accept="application/json">
   <div class="menu-hr"></div>
+  <div class="menu-row" id="openSettingsBtn"><span class="ico">⚙️</span>Настройки</div>
+  <div class="menu-hr"></div>
   <div class="menu-row danger" id="wipeBtn"><span class="ico">⚠️</span>Стереть весь дневник</div>
+</div>
+
+<div class="menu-sheet" id="settingsSheet">
+  <h2>Настройки</h2>
+
+  <div class="settings-block">
+    <div class="settings-row">
+      <span>Версия приложения</span>
+      <span class="settings-value" id="appVersionLabel">—</span>
+    </div>
+    <div class="settings-row">
+      <span>Размер данных дневника</span>
+      <span class="settings-value" id="storageSizeLabel">—</span>
+    </div>
+  </div>
+
+  <div class="menu-row" id="checkUpdatesBtn"><span class="ico">🔄</span>Проверить обновления</div>
+  <div class="settings-note">Обновление подтягивает новую версию интерфейса и шрифтов. Страницы, рисунки и картинки хранятся отдельно на устройстве и никогда не стираются при обновлении.</div>
+
+  <div class="menu-hr"></div>
+  <div class="menu-row" id="resetDockBtn"><span class="ico">📍</span>Сбросить положение панели инструментов</div>
+
+  <div class="menu-hr"></div>
+  <div class="settings-block">
+    <strong class="settings-help-title">Приложение не устанавливается, а просто открывает Chrome?</strong>
+    <div class="settings-note">Значит страница открыта локально (file://) или без HTTPS — так браузер умеет делать только обычный ярлык. Установка настоящего приложения (PWA) работает лишь с настоящего https-адреса. Залейте всю папку — index.html, manifest.json, service-worker.js и icons/ — на GitHub Pages (бесплатно раздаёт по HTTPS) и откройте эту ссылку в Chrome на телефоне: появится настоящее предложение «Установить приложение» / «Добавить на экран».</div>
+  </div>
+
+  <div class="menu-hr"></div>
+  <div class="menu-row" id="backToMenuBtn"><span class="ico">←</span>Назад</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2124,10 +2175,65 @@ window.addEventListener('resize', ()=> resizeCanvas());
 /* ============================== MENU ============================== */
 const menuBackdrop = $('#menuBackdrop');
 const menuSheet = $('#menuSheet');
-function openMenu(){ menuBackdrop.classList.add('open'); menuSheet.classList.add('open'); }
-function closeMenu(){ menuBackdrop.classList.remove('open'); menuSheet.classList.remove('open'); }
+const settingsSheet = $('#settingsSheet');
+function openMenu(){ menuBackdrop.classList.add('open'); menuSheet.classList.add('open'); settingsSheet.classList.remove('open'); }
+function closeMenu(){ menuBackdrop.classList.remove('open'); menuSheet.classList.remove('open'); settingsSheet.classList.remove('open'); }
+function openSettings(){
+  menuBackdrop.classList.add('open');
+  menuSheet.classList.remove('open');
+  settingsSheet.classList.add('open');
+  updateSettingsInfo();
+}
 $('#menuBtn').addEventListener('click', openMenu);
 menuBackdrop.addEventListener('click', closeMenu);
+$('#openSettingsBtn').addEventListener('click', openSettings);
+$('#backToMenuBtn').addEventListener('click', openMenu);
+
+/* ============================== SETTINGS ============================== */
+const APP_VERSION = '1.3.0';
+function updateSettingsInfo(){
+  $('#appVersionLabel').textContent = APP_VERSION;
+  try{
+    const bytes = new Blob([JSON.stringify(journal)]).size;
+    const kb = bytes / 1024;
+    $('#storageSizeLabel').textContent = kb < 1024 ? kb.toFixed(1) + ' КБ' : (kb/1024).toFixed(2) + ' МБ';
+  }catch(err){
+    $('#storageSizeLabel').textContent = '—';
+  }
+}
+
+$('#checkUpdatesBtn').addEventListener('click', async ()=>{
+  showToast('Проверяю обновления…');
+  try{
+    if('serviceWorker' in navigator){
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg){ await reg.update(); }
+    }
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    // journal data lives in localStorage under STORAGE_KEY — untouched by any of the above
+    showToast('Готово — перезагружаю…');
+    setTimeout(()=> window.location.reload(), 500);
+  }catch(err){
+    showToast('Не удалось проверить обновления');
+  }
+});
+
+$('#resetDockBtn').addEventListener('click', ()=>{
+  try{
+    localStorage.removeItem('dnd_journal_dock_top');
+    localStorage.removeItem('dnd_journal_dock_side');
+    localStorage.removeItem('dnd_journal_dock_hidden');
+  }catch(err){}
+  sideDockEl.style.top = '';
+  sideDockEl.style.bottom = '90px';
+  sideDockEl.classList.remove('side-left');
+  dockSide = 'right';
+  showDock();
+  showToast('Панель инструментов сброшена');
+});
 
 $('#newPageBtn').addEventListener('click', ()=>{
   const np = blankPage('Запись ' + (journal.pages.length+1));
