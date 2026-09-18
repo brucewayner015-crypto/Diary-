@@ -1,8 +1,8 @@
 {
-  "name": "Дорбунла эм Джелмаузла",
-  "short_name": "Д эм Д",
-  "description": "Айыб этмегиз мен автомеханикме, программист тюлме",
-  "start_url": "./index.html",
+  "name": "DM — Персонажи группы",
+  "short_name": "DM Панель",
+  "description": "Список персонажей группы и их характеристики для мастера игры",
+  "start_url": "./dm.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -11,19 +11,19 @@
   "lang": "ru",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icons-dm/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons-dm/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-maskable-512.png",
+      "src": "icons-dm/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
